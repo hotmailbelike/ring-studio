@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "omar-shopping-site"
+  },
+  "targets": {
+    "omar-shopping-site": {
+      "hosting": {
+        "ring-studio": [
+          "ring-studio-aomar"
+        ]
+      }
+    }
+  }
+}
