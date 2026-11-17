@@ -1,0 +1,64 @@
+rules_version = '2';
+
+// Ring Studio stores one kind of document: an immutable, shareable ring
+// design. Everything else is denied. The enums and ranges below mirror
+// src/lib/ringConfig.ts and must be kept in sync with it.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /designs/{designId} {
+      // Shared links open a single design by id; listing the collection is not allowed.
+      allow get: if true;
+      allow list: if false;
+
+      allow create: if isValidDesign(request.resource.data);
+
+      // Designs are immutable once shared.
+      allow update, delete: if false;
+    }
+
+    function isValidDesign(design) {
+      let allowedKeys = [
+        'schemaVersion',
+        'metal',
+        'stoneShape',
+        'stoneType',
+        'caratWeight',
+        'setting',
+        'bandWidthMm',
+        'bandProfile',
+        'ringSizeUs',
+        'createdAt'
+      ];
+      return design.keys().hasOnly(allowedKeys)
+        && design.keys().hasAll(allowedKeys)
+        && design.schemaVersion is int
+        && design.schemaVersion == 1
+        && design.metal is string
+        && design.metal in ['yellowGold18k', 'roseGold18k', 'whiteGold18k', 'platinum', 'sterlingSilver']
+        && design.stoneShape is string
+        && design.stoneShape in ['round', 'oval', 'pear', 'emerald', 'cushion']
+        && design.stoneType is string
+        && design.stoneType in ['diamond', 'sapphire', 'ruby', 'emerald']
+        && design.caratWeight is number
+        && design.caratWeight >= 0.25
+        && design.caratWeight <= 3
+        && design.setting is string
+        && design.setting in ['fourProng', 'sixProng', 'bezel']
+        && design.bandWidthMm is number
+        && design.bandWidthMm >= 1.5
+        && design.bandWidthMm <= 4
+        && design.bandProfile is string
+        && design.bandProfile in ['flat', 'court']
+        && design.ringSizeUs is number
+        && design.ringSizeUs >= 4
+        && design.ringSizeUs <= 12
+        && design.createdAt is timestamp
+        && design.createdAt == request.time;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
